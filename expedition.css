@@ -1,0 +1,42 @@
+
+
+body{transition:background-color .7s,color .7s}header{padding-right:145px;position:relative}
+.daynight-switch{position:fixed;right:22px;top:24px;z-index:90;display:flex;gap:9px;align-items:center;background:var(--paper);color:var(--ink);border:1px solid #78855166;padding:7px 11px 7px 7px;border-radius:35px;box-shadow:0 4px 18px #122a3012;font:600 11px 'DM Sans',sans-serif}
+.theme-scenery{display:block;width:65px;height:32px;overflow:hidden;border-radius:30px;background:#9dced3;position:relative;transition:background .65s}
+.theme-orb{position:absolute;left:5px;top:5px;height:22px;width:22px;border-radius:50%;background:#f9d56c;box-shadow:0 0 0 3px #f9d56c33;transition:transform .65s cubic-bezier(.3,1.4,.5,1),background .65s,box-shadow .65s}
+.theme-cloud{position:absolute;width:29px;height:9px;background:#fff7e4;border-radius:20px;right:2px;bottom:6px;transition:transform .6s,opacity .6s}
+.theme-cloud::before{content:'';position:absolute;width:14px;height:13px;background:inherit;border-radius:50%;left:6px;bottom:2px}
+.theme-star{position:absolute;color:#f5e5b7;opacity:0;transform:translateY(15px);transition:opacity .7s,transform .7s;font-size:10px}.star-a{left:9px;top:3px}.star-b{left:29px;top:14px}.star-c{left:17px;top:19px;font-size:7px}
+.night-sky{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 1s;z-index:0}.night-sky i{position:absolute;width:var(--size);height:var(--size);border-radius:50%;background:#f4eaca;animation:nightTwinkle 4s var(--delay) ease-in-out infinite}
+.hero>.eyebrow,.hero>h1,.hero>.hero-bottom{position:relative}.hero>.eyebrow{z-index:1}
+[data-theme=night]{--paper:#182a30;--ink:#e7e9d7;--orange:#f29568;--purple:#716a9b;color-scheme:dark}
+[data-theme=night] .theme-scenery{background:#263653}[data-theme=night] .theme-orb{transform:translateX(32px);background:#f3e4b4;box-shadow:inset -7px 2px 0 #d4c695,0 0 12px #f3e4b433}
+[data-theme=night] .theme-cloud{transform:translateX(35px);opacity:0}[data-theme=night] .theme-star{opacity:1;transform:translateY(0)}[data-theme=night] .night-sky{opacity:1}
+[data-theme=night] header{border-color:#e7e9d733}[data-theme=night] .motion-switch{background:#182a30e8;color:var(--ink)}
+[data-theme=night] .hero{background:radial-gradient(ellipse at 70% 10%,#34445b88,transparent 70%)}
+[data-theme=night] .landscape>svg>path,[data-theme=night] .landscape>svg>.clouds,[data-theme=night] .landscape>svg>g:last-child{filter:brightness(.65) saturate(.7)}
+[data-theme=night] .landscape .scout{filter:brightness(.95)}[data-theme=night] .sticker{background:#635f87;color:#f4ecd5;border-color:#b8b2d4}
+[data-theme=night] .ticker{background:#0f1f24;color:#e4e7cf}[data-theme=night] .ticker-toggle{background:#20363b;color:#e4e7cf;border-color:#e4e7cf55}
+[data-theme=night] .rules{background:#20353a}[data-theme=night] .rule-grid article{border-color:#e7e9d744}[data-theme=night] .rule-grid article.tip-open{background:#2a4345}
+[data-theme=night] .photo-note{background:#2a3f43;box-shadow:0 10px 30px #0002}[data-theme=night] .note-turn,[data-theme=night] .tip-toggle{border-color:#e7e9d766}
+[data-theme=night] .pack{background:radial-gradient(ellipse at 25% 60%,#334a3788,transparent 60%)}
+[data-theme=night] .pack .items button{background:#293e3f;color:#e7e9d7;border-color:#b9c39755}[data-theme=night] .pack .items button:hover{background:#3a5150}
+[data-theme=night] .pack .items button[aria-pressed=true]{background:#4c5b42}[data-theme=night] .bag-slots>*{background:#293e3f;color:#e7e9d7}
+[data-theme=night] .bag-caption,[data-theme=night] .drag-help,[data-theme=night] .trip-notice{color:#c9d3af}[data-theme=night] .pack-status{border-color:#e7e9d744}
+[data-theme=night] .trip-button{background:#d98b5e;color:#172b30;border-color:#b6c19a}[data-theme=night] .trip-button:disabled{background:#2a4142;color:#b6c19a}
+[data-theme=night] .backpack-stage::before{border-color:#b6c19a44}[data-theme=night] .backpack-stage::after{border-color:#b6c19a33}
+[data-theme=night] .finale{background:#654b49}[data-theme=night] .finale h2 em{color:#f2cb9a}[data-theme=night] .big-cta{background:#e8dec4;color:#203338;border-color:#e8dec4}
+[data-theme=night] .summit-button{border-color:#e7e9d788}[data-theme=night] .summit-button:hover{background:#e7e9d722}[data-theme=night] .summit-stamp{border-color:#d9d9b5}
+[data-theme=night] .trail-passport{background:#20363bf2;border-color:#c9d3af55}[data-theme=night] .trail-passport.complete{background:#3d5141}
+[data-theme=night] .expedition-toast{background:#e8dec4;color:#203338}[data-theme=night] .cursor{mix-blend-mode:normal;color:#ffc38b}
+.climb-section{background:#e7e6d4}.climb-heading{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}.climb-heading>p{max-width:400px;font-size:15px}.climb-heading small{display:block;font-size:10px;letter-spacing:0;font-weight:400;opacity:.65;margin-top:12px}
+.climb-shell{border:1px solid #52644966;border-radius:18px;overflow:hidden;background:#f6f1dc;box-shadow:0 12px 0 #293c2d0b;margin-top:15px}
+.climb-hud{display:flex;justify-content:space-between;padding:15px 24px;font-size:12px;letter-spacing:.5px;border-bottom:1px solid #52644933}.climb-hud b{font-variant-numeric:tabular-nums}
+.climb-viewport{position:relative;aspect-ratio:800/460}.climb-viewport canvas{display:block;width:100%;height:100%;outline-offset:-4px}.climb-viewport canvas:focus-visible{outline:3px solid var(--orange)}
+.climb-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f2f0dfbc;backdrop-filter:blur(5px);text-align:center;padding:22px}.climb-overlay[hidden]{display:none}.climb-overlay-icon{font-size:40px;animation:flagWave 3s ease-in-out infinite}.climb-overlay h3{margin:12px 0 0;font-size:30px}.climb-overlay p{font-size:13px;max-width:300px}.climb-overlay button{background:#e86540;border:1px solid #293c2d;border-radius:30px;padding:14px 25px;color:#25392b;font-weight:700}
+.climb-controls{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:15px 20px;flex-wrap:wrap}.climb-controls button{border:1px solid #52644966;background:transparent;border-radius:10px;padding:10px 14px;font-size:11px}.climb-controls button:disabled{opacity:.4}.climb-key-help{font-size:10px;opacity:.7}.climb-touch{display:flex;gap:8px}.climb-touch button{font-size:15px;touch-action:none;user-select:none;min-width:44px;min-height:44px}.climb-touch button.held,.climb-controls button:hover:enabled{background:#d2dab9}.climb-live{font-size:11px;text-align:center;margin:0 15px 14px;min-height:20px}.climb-won .climb-overlay{background:#e7e7c9d9}.climb-won .climb-overlay-icon{color:#bd712c}
+[data-theme=night] .climb-section{background:#20353a}[data-theme=night] .climb-shell{background:#263c3f;border-color:#b9c39766}[data-theme=night] .climb-overlay{background:#142b39cc}[data-theme=night] .climb-overlay button{background:#e8b279;color:#172a30}[data-theme=night] .climb-controls button{border-color:#b9c39777}[data-theme=night] .climb-touch button.held,[data-theme=night] .climb-controls button:hover:enabled{background:#526348}[data-theme=night] .climb-won .climb-overlay{background:#344c39dd}
+@keyframes nightTwinkle{0%,100%{opacity:.2;scale:.8}50%{opacity:.85;scale:1.2}}
+@media(max-width:1100px){header{padding-right:115px}nav{gap:18px}.daynight-switch{right:12px;top:27px}.theme-label{display:none}}
+@media(max-width:800px){header{padding-right:80px}.daynight-switch{top:19px;padding:5px;right:12px}.theme-scenery{width:65px}nav .nav-cta{font-size:10px;padding:10px 12px}.climb-heading{grid-template-columns:1fr;gap:0}.climb-heading h2{margin-bottom:5px}.climb-shell{margin-inline:-3%}.climb-key-help{display:none}.climb-controls{gap:6px;padding:10px}.climb-controls button{padding:9px 11px}.climb-overlay h3{font-size:23px}.climb-overlay-icon{font-size:28px}.climb-overlay p{margin:8px 0}.climb-overlay button{padding:10px 18px;font-size:12px}.climb-hud{padding:12px 16px;font-size:10px}.climb-live{font-size:10px}.climb-viewport{aspect-ratio:800/530}}
+@media(prefers-reduced-motion:reduce){body,.theme-scenery,.theme-orb,.theme-cloud,.theme-star,.night-sky{transition:none}.night-sky i{animation:none;opacity:.6}}

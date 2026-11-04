@@ -1,0 +1,282 @@
+const cursor = document.querySelector('.cursor');
+let reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// clientX/clientY and fixed positioning share the same viewport coordinates.
+document.addEventListener('pointermove', event => {
+  if (!cursor || event.pointerType === 'touch') return;
+  cursor.style.left = event.clientX + 'px';
+  cursor.style.top = event.clientY + 'px';
+  cursor.classList.add('visible');
+  cursor.classList.toggle('active', !!event.target.closest('a,button,.scout'));
+});
+document.documentElement.addEventListener('pointerleave', () => cursor?.classList.remove('visible'));
+window.addEventListener('blur', () => cursor?.classList.remove('visible'));
+document.addEventListener('click',e=>{if(reduced)return;for(let i=0;i<7;i++){const s=document.createElement('span');s.className='spark';s.textContent=['✳','·','+'][i%3];s.style.cssText=`left:${e.clientX}px;top:${e.clientY}px;--sx:${(Math.random()-.5)*150}px;--sy:${-Math.random()*120}px`;document.body.append(s);setTimeout(()=>s.remove(),850)}});const selected=new Set(),buttons=[...document.querySelectorAll('[data-item]')],count=document.querySelector('#count'),message=document.querySelector('#pack-message');function update(){count.textContent=`${selected.size} / 3`;buttons.forEach(b=>b.setAttribute('aria-pressed',String(selected.has(b.dataset.item))));message.textContent=selected.size===3?'Çanta hazır! Şimdi sıra ekibini toplamakta.':selected.size?`${[...selected].join(' + ')}. ${3-selected.size} eşya daha seçebilirsin.`:'İlk eşyanı seç. Macera bekliyor.'}buttons.forEach(b=>b.addEventListener('click',()=>{const item=b.dataset.item;if(selected.has(item))selected.delete(item);else if(selected.size<3)selected.add(item);else{message.textContent='Çantan dolu! Değiştirmek için önce bir eşyayı çıkar.';return}update()}));document.querySelector('#reset').addEventListener('click',()=>{selected.clear();update()});const progress=document.querySelector('.progress');function scrollUpdate(){const max=document.documentElement.scrollHeight-innerHeight;progress.style.width=`${max?scrollY/max*100:0}%`}addEventListener('scroll',scrollUpdate,{passive:true});addEventListener('resize',scrollUpdate);scrollUpdate();
+
+// Convert screen coordinates into SVG coordinates, including responsive scaling.
+const scene = document.querySelector('.landscape > svg');
+if (scene) {
+  scene.setAttribute('role', 'group');
+  scene.setAttribute('aria-label', 'Dağ sahnesi. İzcilere basılı tutup sürükleyebilirsin.');
+  const point = event => {
+    const matrix = scene.getScreenCTM();
+    return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : null;
+  };
+  scene.querySelectorAll('.scout').forEach((scout, index) => {
+    const base = scout.getAttribute('transform') || '';
+    const bounds = scout.getBBox();
+    const origin = new DOMPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2).matrixTransform(scene.getScreenCTM().inverse().multiply(scout.getScreenCTM()));
+    let x = 0, y = 0, drag = null;
+    const place = (nextX, nextY) => {
+      x = Math.max(55 - origin.x, Math.min(scene.viewBox.baseVal.width - 55 - origin.x, nextX));
+      y = Math.max(65 - origin.y, Math.min(scene.viewBox.baseVal.height - 65 - origin.y, nextY));
+      scout.setAttribute('transform', 'translate(' + x + ' ' + y + ') ' + base);
+    };
+    scout.setAttribute('tabindex', '0');
+    scout.setAttribute('role', 'img');
+    scout.setAttribute('aria-label', 'İzci ' + (index + 1) + ': sürükle veya ok tuşlarıyla hareket ettir. Home ile başlangıca dön.');
+    scout.addEventListener('pointerdown', event => {
+      if (!event.isPrimary || event.button !== 0) return;
+      const p = point(event);
+      if (!p) return;
+      event.preventDefault();
+      drag = { id: event.pointerId, start: p, x, y };
+      scout.setPointerCapture(event.pointerId);
+      scout.classList.add('dragging');
+      scout.focus({ preventScroll: true });
+    });
+    scout.addEventListener('pointermove', event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      const p = point(event);
+      if (p) place(drag.x + p.x - drag.start.x, drag.y + p.y - drag.start.y);
+    });
+    const end = event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      drag = null;
+      scout.classList.remove('dragging');
+      if (scout.hasPointerCapture(event.pointerId)) scout.releasePointerCapture(event.pointerId);
+    };
+    scout.addEventListener('pointerup', end);
+    scout.addEventListener('pointercancel', end);
+    scout.addEventListener('lostpointercapture', end);
+    scout.addEventListener('keydown', event => {
+      const step = event.shiftKey ? 30 : 10;
+      const movement = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[event.key];
+      if (event.key === 'Home') { event.preventDefault(); place(0, 0); }
+      else if (movement) { event.preventDefault(); place(x + movement[0], y + movement[1]); }
+    });
+  });
+}
+
+// Backpack presentation uses the existing selection state and controls.
+const bag = document.querySelector('#backpack');
+const slots = document.querySelector('.bag-slots');
+const bagCaption = document.querySelector('#bag-caption');
+let bagTimer;
+function animateBag() {
+  if (reduced) return;
+  clearTimeout(bagTimer);
+  bag.classList.remove('packing');
+  void bag.offsetWidth;
+  bag.classList.add('packing');
+  bagTimer = setTimeout(() => bag.classList.remove('packing'), 700);
+}
+function renderBag() {
+  bag.classList.toggle('full', selected.size === 3);
+  slots.replaceChildren();
+  selected.forEach(name => {
+    const source = buttons.find(button => button.dataset.item === name);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.textContent = source.querySelector('span').textContent;
+    chip.setAttribute('aria-label', name + ': çantadan çıkar');
+    chip.title = name + ' — çıkarmak için tıkla';
+    chip.addEventListener('click', () => source.click());
+    slots.append(chip);
+  });
+  for (let i = selected.size; i < 3; i++) {
+    const empty = document.createElement('span');
+    empty.className = 'empty-slot'; empty.textContent = '＋';
+    empty.setAttribute('aria-hidden', 'true'); slots.append(empty);
+  }
+  bagCaption.textContent = ['Boş çanta, büyük planlar.', 'Güzel başlangıç. Başka ne lazım?', 'Bir eşyalık daha yer var!', 'Fermuarı kapat. Zirve bizi bekliyor!'][selected.size];
+}
+function flyToBag(button) {
+  if (reduced) { renderBag(); return; }
+  const from = button.querySelector('span').getBoundingClientRect();
+  const to = bag.getBoundingClientRect();
+  const icon = document.createElement('span');
+  icon.className = 'pack-fly'; icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = button.querySelector('span').textContent;
+  icon.style.left = from.x + from.width / 2 + 'px';
+  icon.style.top = from.y + from.height / 2 + 'px';
+  document.body.append(icon);
+  const dx = to.x + to.width / 2 - from.x - from.width / 2;
+  const dy = to.y + to.height * .3 - from.y - from.height / 2;
+  const flight = icon.animate([
+    {transform:'translate(-50%,-50%) scale(1) rotate(0)',opacity:1},
+    {transform:'translate(calc(-50% + ' + dx * .5 + 'px),calc(-50% + ' + (dy * .5 - 90) + 'px)) scale(1.25) rotate(-20deg)',opacity:1,offset:.5},
+    {transform:'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) scale(.15) rotate(25deg)',opacity:0}
+  ],{duration:650,easing:'cubic-bezier(.25,.6,.3,1)'});
+  flight.onfinish = () => { icon.remove(); animateBag(); };
+}
+function celebrateBag() {
+  if (reduced) return;
+  const rect = bag.getBoundingClientRect();
+  for (let i = 0; i < 22; i++) {
+    const bit = document.createElement('i'); bit.className = 'pack-confetti';
+    bit.setAttribute('aria-hidden','true');
+    bit.style.left = rect.x + rect.width / 2 + 'px'; bit.style.top = rect.y + 65 + 'px';
+    bit.style.background = ['#e86540','#a6af73','#b6a6d3','#d6ae55'][i % 4];
+    document.body.append(bit);
+    const dx = (Math.random() - .5) * 320;
+    const burst = bit.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate(' + dx + 'px,-100px) rotate(160deg)',opacity:1,offset:.45},{transform:'translate(' + dx * 1.3 + 'px,130px) rotate(330deg)',opacity:0}],{duration:1100 + Math.random() * 400,easing:'ease-out'});
+    burst.onfinish = () => bit.remove();
+  }
+}
+buttons.forEach(button => {
+  button.addEventListener('pointerdown', () => { button.dataset.wasPacked = String(selected.has(button.dataset.item)); });
+  // Capture runs before the original selection handler, including keyboard clicks.
+  button.addEventListener('click', () => { button.dataset.wasPacked = String(selected.has(button.dataset.item)); }, true);
+  button.addEventListener('click', () => {
+    const added = button.dataset.wasPacked !== 'true' && selected.has(button.dataset.item);
+    renderBag();
+    if (added) { flyToBag(button); if (selected.size === 3) celebrateBag(); }
+    else if (button.dataset.wasPacked === 'true') animateBag();
+  });
+});
+document.querySelector('#reset').addEventListener('click', () => { renderBag(); animateBag(); });
+renderBag();
+
+// Direct manipulation: drag an item into the backpack, or use its button.
+const packStage = document.querySelector('.backpack-stage');
+const packSection = document.querySelector('#canta');
+const tripButton = document.createElement('button');
+tripButton.type = 'button';
+tripButton.className = 'trip-button';
+tripButton.textContent = 'Önce çantanı doldur · 0/3';
+tripButton.disabled = true;
+packStage.append(tripButton);
+const dropHint = document.createElement('span');
+dropHint.className = 'drop-hint';
+dropHint.textContent = 'Eşyayı buraya bırak ↓';
+dropHint.setAttribute('aria-hidden', 'true');
+packStage.prepend(dropHint);
+const help = document.createElement('p');
+help.className = 'drag-help';
+help.textContent = 'Eşyaları çantaya sürükle veya tıklayarak ekle. Çantaya dokunmayı da dene!';
+document.querySelector('.items').before(help);
+bag.setAttribute('tabindex', '0');
+bag.setAttribute('role', 'button');
+bag.setAttribute('aria-label', 'Çantayı zıplat');
+const tripNotice = document.createElement('div');
+tripNotice.className = 'trip-notice';
+tripNotice.setAttribute('role', 'status');
+packStage.append(tripNotice);
+let launchAnimation;
+function refreshTrip() {
+  tripButton.disabled = selected.size !== 3;
+  tripButton.textContent = selected.size === 3 ? 'Hazırım, yola çık! ↗' : 'Önce çantanı doldur · ' + selected.size + '/3';
+  tripNotice.textContent = '';
+  if (launchAnimation) launchAnimation.cancel();
+  launchAnimation = null;
+  bag.classList.remove('departed');
+}
+buttons.forEach(b => b.addEventListener('click', refreshTrip));
+document.querySelector('#reset').addEventListener('click', refreshTrip);
+bag.addEventListener('click', animateBag);
+bag.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); animateBag(); }
+});
+packStage.addEventListener('pointermove', e => {
+  if (reduced || e.pointerType === 'touch') return;
+  const r = packStage.getBoundingClientRect();
+  bag.style.setProperty('--tilt-x', ((e.clientX-r.left)/r.width-.5)*16+'deg');
+  bag.style.setProperty('--tilt-y', -((e.clientY-r.top)/r.height-.5)*12+'deg');
+});
+packStage.addEventListener('pointerleave', () => {
+  bag.style.setProperty('--tilt-x','0deg'); bag.style.setProperty('--tilt-y','0deg');
+});
+let activeItemDrag = null;
+buttons.forEach(button => {
+  let drag = null, suppressClick = false;
+  button.addEventListener('click', e => {
+    if (suppressClick) { e.preventDefault(); e.stopImmediatePropagation(); suppressClick=false; }
+  }, true);
+  button.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.button !== 0 || activeItemDrag) return;
+    drag = { id:e.pointerId, x:e.clientX, y:e.clientY, ghost:null };
+    activeItemDrag = button;
+    button.setPointerCapture(e.pointerId);
+  });
+  const overBag = e => {
+    const r=packStage.getBoundingClientRect();
+    return e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
+  };
+  button.addEventListener('pointermove', e => {
+    if (!drag || drag.id!==e.pointerId) return;
+    if (!drag.ghost && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>9) {
+      const ghost=document.createElement('span');
+      ghost.className='pack-fly drag-ghost'; ghost.setAttribute('aria-hidden','true');
+      ghost.textContent=button.querySelector('span').textContent;
+      document.body.append(ghost); drag.ghost=ghost;
+      button.classList.add('item-dragging'); packStage.classList.add('awaiting-drop');
+    }
+    if (drag.ghost) {
+      drag.ghost.style.left=e.clientX+'px'; drag.ghost.style.top=e.clientY+'px';
+      packStage.classList.toggle('drop-active',overBag(e));
+    }
+  });
+  function finish(e) {
+    if (!drag || drag.id!==e.pointerId) return;
+    const didDrag=!!drag.ghost;
+    const accept=didDrag && e.type==='pointerup' && overBag(e);
+    drag.ghost?.remove(); drag=null; activeItemDrag=null;
+    button.classList.remove('item-dragging');
+    packStage.classList.remove('awaiting-drop','drop-active');
+    if (button.hasPointerCapture(e.pointerId)) button.releasePointerCapture(e.pointerId);
+    if (didDrag) {
+      suppressClick=true; setTimeout(()=>{suppressClick=false;},0);
+      if (accept) {
+        if (selected.has(button.dataset.item)) bagCaption.textContent='Bu eşya zaten çantanda!';
+        else if (selected.size===3) { bagCaption.textContent='Çanta dolu! Önce bir eşyayı çıkar.'; animateBag(); }
+        else {
+          selected.add(button.dataset.item); update(); renderBag(); refreshTrip();
+          animateBag(); if(selected.size===3) celebrateBag();
+        }
+      }
+    }
+  }
+  button.addEventListener('pointerup',finish);
+  button.addEventListener('pointercancel',finish);
+  button.addEventListener('lostpointercapture',finish);
+});
+tripButton.addEventListener('click', () => {
+  if (selected.size!==3) return;
+  tripNotice.textContent='Keşif çantan hazır. Sıradaki durak: zirve!';
+  celebrateBag();
+  if (!reduced) {
+    launchAnimation?.cancel();
+    launchAnimation=bag.animate([
+      {transform:'translateY(0) rotate(0)'},
+      {transform:'translateY(12px) scale(1.08,.9)',offset:.2},
+      {transform:'translateY(-65px) rotate(-12deg) scale(.95,1.08)',offset:.55},
+      {transform:'translateY(0) rotate(5deg)',offset:.85},
+      {transform:'translateY(0) rotate(0)'}
+    ],{duration:1100,easing:'cubic-bezier(.3,.1,.3,1)'});
+  }
+  tripButton.textContent='Bir kez daha zıpla! ↗';
+});
+refreshTrip();
+
+// One-time entrance animations only run while the section is visible.
+if (!reduced && 'IntersectionObserver' in window) {
+  const reveal = new IntersectionObserver(entries => {
+    if (!entries.some(entry=>entry.isIntersecting)) return;
+    buttons.forEach((button,i)=>button.animate([
+      {opacity:0,transform:'translateY(38px) rotate('+(i%2?6:-6)+'deg)'},
+      {opacity:1,transform:'translateY(0) rotate(0)'}
+    ],{duration:650,delay:i*90,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'}));
+    reveal.disconnect();
+  },{threshold:.15});
+  reveal.observe(packSection);
+}
